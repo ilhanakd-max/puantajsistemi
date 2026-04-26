@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesai Takip Sistemi</title>
+    <meta name="description" content="Mesai Takip Sistemi — Personel mesai yönetimi ve raporlama">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        /* =========================================================
+           AYARLAR — Google Apps Script URL'si
+           ========================================================= */
+        /* API_URL değişkeni JavaScript bölümünde tanımlanır */
+
+        /* =========================================================
+           TASARIM SİSTEMİ — CSS DEĞİŞKENLERİ
+           ========================================================= */
+        :root {
+            --brand-primary:   #1e40af;
+            --brand-secondary: #3b82f6;
+            --brand-accent:    #06b6d4;
+            --brand-success:   #10b981;
+            --brand-warning:   #f59e0b;
+            --brand-danger:    #ef4444;
+            --sidebar-w:       260px;
+            --sidebar-bg:      #0f172a;
+            --sidebar-border:  rgba(255,255,255,0.07);
+            --sidebar-text:    #94a3b8;
+            --sidebar-active-bg: rgba(59,130,246,0.15);
+            --sidebar-active:  #3b82f6;
+            --topbar-h:        64px;
+            --body-bg:         #f0f4f9;
+            --card-bg:         #ffffff;
+            --text-main:       #1e293b;
+            --text-muted:      #64748b;
+            --border-color:    #e2e8f0;
+            --radius:          .75rem;
+            --shadow:          0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+            --shadow-md:       0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.05);
+            --shadow-lg:       0 10px 25px rgba(0,0,0,.1);
+        }
+        /* Reset & Base */
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--body-bg);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        /* =========================================================
+           LOGIN PAGE
+           ========================================================= */
+        .login-page {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .login-wrapper { width: 100%; max-width: 440px; }
+        .login-card {
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 1.25rem;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.45);
+        }
+        .brand-logo {
+            width: 64px; height: 64px;
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+            border-radius: 1rem;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.25rem;
+            font-size: 1.8rem; color: #fff;
+            box-shadow: 0 8px 20px rgba(30,64,175,0.5);
+        }
+        .login-card h1 {
+            font-size: 1.5rem; font-weight: 700;
+            color: #f1f5f9; text-align: center; margin-bottom: .25rem;
+        }
+        .login-card .subtitle {
+            font-size: .875rem; color: #94a3b8;
+            text-align: center; margin-bottom: 2rem;
+        }
+        .login-page .form-label { color: #cbd5e1; font-size: .85rem; font-weight: 500; }
+        .login-page .form-control {
+            background: rgba(255,255,255,0.08) !important;
+            border: 1px solid rgba(255,255,255,0.15) !important;
+            color: #f1f5f9 !important;
+            border-radius: .625rem; padding: .65rem 1rem;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .login-page .form-control::placeholder { color: #64748b !important; }
+        .login-page .form-control:focus {
+            border-color: var(--brand-secondary) !important;
+            box-shadow: 0 0 0 3px rgba(59,130,246,.25) !important;
+        }
+        .login-page .input-group-text {
+            background: rgba(255,255,255,0.08) !important;
+            border: 1px solid rgba(255,255,255,0.15) !important;
+            color: #94a3b8; border-radius: .625rem 0 0 .625rem;
+        }
+        .login-page .input-group .form-control { border-radius: 0 .625rem .625rem 0; }
+        .btn-login {
+            width: 100%;
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+            border: none; border-radius: .625rem;
+            padding: .75rem; font-size: 1rem; font-weight: 600;
+            color: #fff; cursor: pointer;
+            transition: opacity .2s, transform .15s;
+            box-shadow: 0 4px 15px rgba(30,64,175,0.4);
+        }
+        .btn-login:hover { opacity: .9; transform: translateY(-1px); }
+        .login-page .alert-danger {
+            background: rgba(239,68,68,.15);
+            border: 1px solid rgba(239,68,68,.3);
+            color: #fca5a5; border-radius: .625rem;
+        }
+        .login-page .footer-text { text-align: center; margin-top: 1.5rem; color: #475569; font-size: .8rem; }
+        .bg-dots { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+        .dot {
+            position: absolute; width: 6px; height: 6px;
+            background: rgba(59,130,246,.35); border-radius: 50%;
+            animation: float 8s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%,100% { transform: translateY(0); opacity: .6; }
+            50%      { transform: translateY(-30px); opacity: 1; }
+        }
+
+        /* =========================================================
+           SIDEBAR
+           ========================================================= */
+        #sidebar {
+            position: fixed; top: 0; left: 0;
+            width: var(--sidebar-w); height: 100vh;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border);
+            display: flex; flex-direction: column;
+            z-index: 1040;
+            transition: transform .3s cubic-bezier(.4,0,.2,1);
+            overflow-y: auto;
+        }
+        #sidebar .sidebar-brand {
+            display: flex; align-items: center; gap: .75rem;
+            padding: 1.25rem 1.25rem 1rem;
+            border-bottom: 1px solid var(--sidebar-border);
+            text-decoration: none; cursor: pointer;
+        }
+        .sidebar-brand .brand-icon {
+            width: 40px; height: 40px; border-radius: .625rem;
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; color: #fff; flex-shrink: 0;
+        }
+        .sidebar-brand .brand-text { color: #f1f5f9; font-weight: 700; font-size: .95rem; line-height: 1.2; }
+        .sidebar-brand .brand-sub  { color: var(--sidebar-text); font-size: .7rem; font-weight: 400; }
+
+        .sidebar-section {
+            padding: 1rem .75rem .25rem;
+            font-size: .65rem; font-weight: 600; letter-spacing: .08em;
+            color: #475569; text-transform: uppercase; margin: 0;
+        }
+        .sidebar-nav { list-style: none; padding: 0 .75rem; margin: 0; }
+        .sidebar-nav li { margin-bottom: .15rem; }
+        .sidebar-nav a {
+            display: flex; align-items: center; gap: .7rem;
+            padding: .6rem .85rem; border-radius: .5rem;
+            color: var(--sidebar-text); text-decoration: none;
+            font-size: .875rem; font-weight: 500;
+            transition: background .18s, color .18s;
+            cursor: pointer;
+        }
+        .sidebar-nav a:hover { background: rgba(255,255,255,.06); color: #e2e8f0; }
+        .sidebar-nav a.active {
+            background: var(--sidebar-active-bg);
+            color: var(--sidebar-active);
+        }
+        .sidebar-nav a .nav-icon { width: 18px; text-align: center; }
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 1rem .75rem;
+            border-top: 1px solid var(--sidebar-border);
+        }
+        .user-chip {
+            display: flex; align-items: center; gap: .6rem;
+            padding: .5rem .75rem; border-radius: .5rem;
+            background: rgba(255,255,255,.05);
+        }
+        .user-chip .avatar {
+            width: 34px; height: 34px; border-radius: .375rem;
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: .85rem; font-weight: 600; flex-shrink: 0;
+        }
+        .user-chip .user-info .name   { color: #e2e8f0; font-size: .825rem; font-weight: 600; }
+        .user-chip .user-info .role   { color: #64748b; font-size: .72rem; }
+        .btn-logout {
+            width: 100%; margin-top: .5rem;
+            background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.2);
+            color: #fca5a5; border-radius: .5rem;
+            padding: .45rem; font-size: .8rem; font-weight: 500; cursor: pointer;
+            transition: background .2s; text-align: center; text-decoration: none; display: block;
+        }
+        .btn-logout:hover { background: rgba(239,68,68,.2); color: #fca5a5; }
+
+        /* =========================================================
+           TOPBAR
+           ========================================================= */
+        #topbar {
+            position: fixed; top: 0;
+            left: var(--sidebar-w); right: 0;
+            height: var(--topbar-h);
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center;
+            padding: 0 1.5rem;
+            z-index: 1030;
+            box-shadow: var(--shadow);
+            gap: .75rem;
+        }
+        #topbar .topbar-title { font-weight: 700; color: var(--text-main); font-size: 1.05rem; }
+        #topbar .topbar-subtitle { color: var(--text-muted); font-size: .8rem; }
+        .sidebar-toggle {
+            display: none; background: none; border: none;
+            font-size: 1.2rem; color: var(--text-muted); cursor: pointer;
+            padding: .3rem; margin-right: .25rem;
+        }
+        #topbar .ms-auto { display: flex; align-items: center; gap: .5rem; }
+        .topbar-user-badge {
+            display: flex; align-items: center; gap: .5rem;
+            padding: .4rem .75rem; background: var(--body-bg);
+            border-radius: 2rem; font-size: .82rem; color: var(--text-muted);
+        }
+
+        /* =========================================================
+           MAIN CONTENT AREA
+           ========================================================= */
+        #main-content {
+            margin-left: var(--sidebar-w);
+            padding-top: var(--topbar-h);
+            min-height: 100vh;
+        }
+        .content-wrap { padding: 1.75rem 1.5rem; }
+
+        /* =========================================================
+           CARDS & COMPONENTS
+           ========================================================= */
+        .card-modern {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+        .card-modern .card-header {
+            background: none; border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.25rem; font-weight: 600; color: var(--text-main);
+        }
+        .card-modern .card-body { padding: 1.25rem; }
+        .stat-card {
+            background: var(--card-bg); border-radius: var(--radius);
+            border: 1px solid var(--border-color); box-shadow: var(--shadow);
+            padding: 1.25rem 1.5rem;
+            display: flex; align-items: center; gap: 1rem;
+            transition: box-shadow .2s, transform .2s;
+        }
+        .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        .stat-icon {
+            width: 52px; height: 52px; border-radius: .75rem; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; color: #fff;
+        }
+        .stat-label { color: var(--text-muted); font-size: .8rem; font-weight: 500; }
+        .stat-value { font-size: 1.75rem; font-weight: 800; color: var(--text-main); line-height: 1; }
+
+        /* Tablo */
+        .table-modern { width: 100%; border-collapse: collapse; }
+        .table-modern thead th {
+            background: var(--body-bg);
+            color: var(--text-muted); font-size: .78rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .04em;
+            padding: .75rem 1rem; border-bottom: 2px solid var(--border-color);
+            white-space: nowrap;
+        }
+        .table-modern tbody tr { border-bottom: 1px solid var(--border-color); transition: background .15s; }
+        .table-modern tbody tr:hover { background: #f8fafc; }
+        .table-modern tbody td { padding: .75rem 1rem; font-size: .9rem; vertical-align: middle; }
+        .table-modern tbody tr:last-child { border-bottom: none; }
+
+        /* Badge */
+        .badge-role {
+            display: inline-flex; align-items: center; gap: .3rem;
+            padding: .3rem .65rem; border-radius: 2rem; font-size: .75rem; font-weight: 600;
+        }
+        .badge-admin    { background: rgba(30,64,175,.1); color: var(--brand-primary); }
+        .badge-employee { background: rgba(16,185,129,.1); color: var(--brand-success); }
+
+        /* Action buttons */
+        .btn-action {
+            width: 32px; height: 32px; border-radius: .375rem;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: .85rem; cursor: pointer; transition: background .15s, color .15s;
+            border: none;
+        }
+        .btn-edit  { background: rgba(59,130,246,.1); color: var(--brand-secondary); }
+        .btn-edit:hover { background: rgba(59,130,246,.2); }
+        .btn-del   { background: rgba(239,68,68,.1); color: var(--brand-danger); }
+        .btn-del:hover { background: rgba(239,68,68,.2); }
+
+        /* Alert flash */
+        .alert { border-radius: .6rem; font-size: .9rem; }
+
+        /* Form controls */
+        .form-control, .form-select {
+            border-radius: .5rem; border-color: var(--border-color);
+            font-size: .9rem;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--brand-secondary);
+            box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+        }
+        .form-label { font-size: .875rem; font-weight: 500; color: var(--text-main); }
+
+        /* Primary button */
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+            border: none; color: #fff; border-radius: .5rem;
+            padding: .55rem 1.25rem; font-size: .9rem; font-weight: 600;
+            cursor: pointer; transition: opacity .2s, transform .15s;
+            box-shadow: 0 4px 12px rgba(30,64,175,.3);
+        }
+        .btn-primary-custom:hover { opacity: .9; transform: translateY(-1px); color: #fff; }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed; inset: 0; background: rgba(15,23,42,.6);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999;
+        }
+        .loading-spinner {
+            width: 48px; height: 48px; border: 4px solid rgba(255,255,255,.2);
+            border-top-color: var(--brand-secondary); border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Flash messages */
+        #flash-container {
+            position: fixed; top: 80px; right: 1.5rem; z-index: 9998;
+            display: flex; flex-direction: column; gap: .5rem; max-width: 420px;
+        }
+        .flash-msg {
+            padding: .75rem 1.25rem; border-radius: .6rem;
+            font-size: .9rem; box-shadow: var(--shadow-md);
+            animation: slideIn .3s ease-out;
+            display: flex; align-items: center; gap: .5rem;
+        }
+        .flash-msg.success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+        .flash-msg.danger  { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+        .flash-msg.info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* =========================================================
+           RESPONSIVE — MOBILE
+           ========================================================= */
+        @media (max-width: 991.98px) {
+            #sidebar { transform: translateX(-100%); }
+            #sidebar.open { transform: translateX(0); }
+            #main-content { margin-left: 0; }
+            #topbar { left: 0; }
+            .sidebar-toggle { display: block; }
+            .overlay {
+                display: none;
+                position: fixed; inset: 0;
+                background: rgba(0,0,0,.5);
+                z-index: 1039;
+            }
+            .overlay.show { display: block; }
+        }
+
+        /* =========================================================
+           PRINT
+           ========================================================= */
+        @media print {
+            #sidebar, #topbar, .no-print, #flash-container, .loading-overlay { display: none !important; }
+            #main-content { margin-left: 0 !important; padding-top: 0 !important; }
+            body { background: #fff !important; color: #000 !important; }
+            .card-modern { border: 1px solid #ddd !important; box-shadow: none !important; }
+            .table-modern thead th { background: #f0f0f0 !important; color: #333 !important; }
+            a { color: inherit !important; text-decoration: none !important; }
+            .btn-action, .content-actions { display: none !important; }
+            .print-only { display: block !important; }
+        }
+        .print-only { display: none; }
+
+        /* Tab list-group active */
+        .list-group-item.active { background-color: var(--brand-primary); border-color: var(--brand-primary); }
+
+        /* Hide pages */
+        .page-view { display: none; }
+        .page-view.active-page { display: block; }
+        #app-layout { display: none; }
+    </style>
+</head>
+<body>
+
+<!-- ===================== FLASH MESSAGES ===================== -->
+<div id="flash-container"></div>
+
+<!-- ===================== LOADING OVERLAY ===================== -->
+<div class="loading-overlay" id="loadingOverlay" style="display:none;">
+    <div class="loading-spinner"></div>
+</div>
+
+<!-- ===================== LOGIN PAGE ===================== -->
+<div id="login-page" class="login-page">
+    <div class="bg-dots" aria-hidden="true" id="bg-dots"></div>
+    <div class="login-wrapper" style="position:relative;z-index:1;">
+        <!-- GİRİŞ FORMU -->
+        <div class="login-card" id="login-card">
+            <div class="brand-logo">
+                <i class="fa-solid fa-business-time"></i>
+            </div>
+            <h1>Mesai Takip Sistemi</h1>
+            <p class="subtitle">Personel Giriş Paneli</p>
+
+            <div id="login-error" class="alert alert-danger d-none" role="alert">
+                <i class="fa-solid fa-circle-exclamation me-1"></i>
+                <span id="login-error-text"></span>
+            </div>
+
+            <form id="loginForm" autocomplete="on">
+                <div class="mb-3">
+                    <label for="login-kullanici" class="form-label">
+                        <i class="fa-solid fa-user me-1"></i> Kullanıcı Adı
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+                        <input type="text" class="form-control" id="login-kullanici"
+                               placeholder="kullanici_adi" autocomplete="username" required>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="login-sifre" class="form-label">
+                        <i class="fa-solid fa-lock me-1"></i> Şifre
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" class="form-control" id="login-sifre"
+                               placeholder="••••••••" autocomplete="current-password" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-login" id="btn-giris">
+                    <i class="fa-solid fa-right-to-bracket me-2"></i> Giriş Yap
+                </button>
+                <div class="mt-3 text-center">
+                    <p class="text-white-50 mb-0" style="font-size:0.8rem;">
+                        <i class="fa-solid fa-info-circle me-1"></i> Şifrenizi unutursanız yöneticiye başvurun.
+                    </p>
+                </div>
+                <div class="mt-2 text-center">
+                    <a href="#" onclick="toggleAuthView('register', event)" class="text-white text-decoration-none" style="font-size:0.9rem;opacity:0.8;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+                        Hesabınız yok mu? <strong style="color:var(--brand-secondary)">Kayıt Ol</strong>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- KAYIT FORMU -->
+        <div class="login-card" id="register-card" style="display:none;">
+            <div class="brand-logo">
+                <i class="fa-solid fa-user-plus"></i>
+            </div>
+            <h1>Aramıza Katılın</h1>
+            <p class="subtitle">Yeni Personel Kayıt Paneli</p>
+
+            <div id="register-error" class="alert d-none" role="alert">
+                <i class="fa-solid fa-info-circle me-1"></i>
+                <span id="register-error-text"></span>
+            </div>
+
+            <form id="registerForm" autocomplete="off">
+                <div class="mb-3">
+                    <label class="form-label"><i class="fa-solid fa-id-card me-1"></i> Ad Soyad</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fa-solid fa-id-card"></i></span>
+                        <input type="text" class="form-control" id="reg-adsoyad" placeholder="Ad Soyad" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label"><i class="fa-solid fa-user me-1"></i> Kullanıcı Adı</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+                        <input type="text" class="form-control" id="reg-kullanici" placeholder="kullanici_adi" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label"><i class="fa-solid fa-lock me-1"></i> Şifre</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" class="form-control" id="reg-sifre" placeholder="••••••••" required>
+                    </div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label"><i class="fa-solid fa-phone me-1"></i> Telefon</label>
+                        <input type="text" class="form-control" id="reg-telefon" placeholder="05xx-xxx-xxxx">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label"><i class="fa-solid fa-envelope me-1"></i> E-Posta</label>
+                        <input type="email" class="form-control" id="reg-eposta" placeholder="ornek@mail.com">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label"><i class="fa-solid fa-building me-1"></i> Çalıştığı Birim</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fa-solid fa-building"></i></span>
+                        <select class="form-select" id="reg-birim" required>
+                            <option value="">Yükleniyor...</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn-login" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <i class="fa-solid fa-check me-2"></i> Kayıt Ol
+                </button>
+                <div class="mt-3 text-center">
+                    <a href="#" onclick="toggleAuthView('login', event)" class="text-white text-decoration-none" style="font-size:0.9rem;opacity:0.8;transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
+                        Zaten hesabınız var mı? <strong style="color:var(--brand-secondary)">Giriş Yap</strong>
+                    </a>
+                </div>
+            </form>
+        </div>
+        <p class="footer-text">
+            &copy; 2025 Mesai Takip Sistemi — v3.0
+        </p>
+    </div>
+</div>
+
+<!-- ===================== APP LAYOUT ===================== -->
+<div id="app-layout">
+    <!-- Sidebar Overlay (Mobile) -->
+    <div class="overlay" id="sidebarOverlay"></div>
+
+    <!-- ===================== SIDEBAR ===================== -->
+    <nav id="sidebar" aria-label="Ana menü">
+        <a class="sidebar-brand" onclick="navigateTo('dashboard')">
+            <div class="brand-icon"><i class="fa-solid fa-business-time"></i></div>
+            <div class="brand-text">
+                Mesai Takip
+                <div class="brand-sub">Sistemi v3.0</div>
+            </div>
+        </a>
+
+        <p class="sidebar-section">Ana Menü</p>
+        <ul class="sidebar-nav">
+            <li>
+                <a onclick="navigateTo('dashboard')" data-page="dashboard">
+                    <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span> Dashboard
+                </a>
+            </li>
+            <li>
+                <a onclick="navigateTo('mesai')" data-page="mesai">
+                    <span class="nav-icon"><i class="fa-solid fa-clock"></i></span> Mesai Ekle
+                </a>
+            </li>
+            <li>
+                <a onclick="navigateTo('rapor')" data-page="rapor">
+                    <span class="nav-icon"><i class="fa-solid fa-chart-bar"></i></span> Raporlar
+                </a>
+            </li>
+            <li>
+                <a onclick="navigateTo('profil')" data-page="profil">
+                    <span class="nav-icon"><i class="fa-solid fa-user-gear"></i></span> Profilim
+                </a>
+            </li>
+        </ul>
+
+        <div id="admin-menu" style="display:none;">
+            <p class="sidebar-section">Yönetim</p>
+            <ul class="sidebar-nav">
+                <li>
+                    <a onclick="navigateTo('personel')" data-page="personel">
+                        <span class="nav-icon"><i class="fa-solid fa-users"></i></span> Personeller
+                    </a>
+                </li>
+                <li>
+                    <a onclick="navigateTo('birimler')" data-page="birimler">
+                        <span class="nav-icon"><i class="fa-solid fa-building"></i></span> Birimler
+                    </a>
+                </li>
+                <li>
+                    <a onclick="navigateTo('personel-form')" data-page="personel-form">
+                        <span class="nav-icon"><i class="fa-solid fa-user-plus"></i></span> Personel Ekle
+                    </a>
+                </li>
+                <li>
+                    <a onclick="navigateTo('ayarlar')" data-page="ayarlar">
+                        <span class="nav-icon"><i class="fa-solid fa-sliders"></i></span> Ayarlar
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-chip">
+                <div class="avatar" id="sidebar-avatar"></div>
+                <div class="user-info">
+                    <div class="name" id="sidebar-name"></div>
+                    <div class="role" id="sidebar-role"></div>
+                </div>
+            </div>
+            <a class="btn-logout" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket me-1"></i> Çıkış Yap
+            </a>
+        </div>
+    </nav>
+
+    <!-- ===================== TOPBAR ===================== -->
+    <header id="topbar">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Menüyü aç/kapat">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <div>
+            <div class="topbar-title" id="topbar-title">Dashboard</div>
+            <div class="topbar-subtitle d-none d-sm-block" id="topbar-subtitle"></div>
+        </div>
+        <div class="ms-auto">
+            <div class="topbar-user-badge d-none d-md-flex">
+                <i class="fa-solid fa-map-marker-alt text-primary"></i>
+                <span id="topbar-gorev"></span>
+            </div>
+            <a class="btn btn-sm btn-outline-secondary d-none d-md-inline-flex align-items-center gap-1" onclick="logout()" style="cursor:pointer;">
+                <i class="fa-solid fa-right-from-bracket"></i> Çıkış
+            </a>
+        </div>
+    </header>
+
+    <!-- ===================== MAIN CONTENT ===================== -->
+    <main id="main-content">
+        <div class="content-wrap">
+            <!-- Dashboard -->
+            <div id="page-dashboard" class="page-view"></div>
+            <!-- Mesai -->
+            <div id="page-mesai" class="page-view"></div>
+            <!-- Rapor -->
+            <div id="page-rapor" class="page-view"></div>
+            <!-- Personel -->
+            <div id="page-personel" class="page-view"></div>
+            <!-- Personel Form -->
+            <div id="page-personel-form" class="page-view"></div>
+            <!-- Birimler -->
+            <div id="page-birimler" class="page-view"></div>
+            <!-- Ayarlar -->
+            <div id="page-ayarlar" class="page-view"></div>
+            <!-- Profil -->
+            <div id="page-profil" class="page-view"></div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ============================================================
+// YAPILANDIRMA
+// ============================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbw9KIdvqxqaWLh8P9LcB9_hihHnOd1kfELcy_IvcR4x75femhK9pAnpaM8YjvGnfUhTpQ/exec';
+
+// ============================================================
+// GLOBAL DEĞİŞKENLER
+// ============================================================
+let currentUser = null;
+let currentPage = 'dashboard';
+
+// ============================================================
+// YARDIMCI FONKSİYONLAR
+// ============================================================
+function e(val) {
+    const div = document.createElement('div');
+    div.textContent = String(val ?? '');
+    return div.innerHTML;
+}
+
+function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
+function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+
+function flashMesaj(tip, mesaj) {
+    const container = document.getElementById('flash-container');
+    const div = document.createElement('div');
+    div.className = `flash-msg ${tip}`;
+    const icon = tip === 'success' ? 'fa-check-circle' : tip === 'danger' ? 'fa-circle-exclamation' : 'fa-info-circle';
+    div.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${mesaj}</span>`;
+    container.appendChild(div);
+    setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 300); }, 4000);
+}
+
+async function apiCall(action, data = {}) {
+    const payload = { ...data };
+    if (currentUser) {
+        payload.userId = currentUser.id;
+        payload.rol = currentUser.rol;
+    }
+    try {
+        // action'ı URL parametresi olarak gönder (GAS e.parameter'dan okur)
+        const url = API_URL + '?action=' + encodeURIComponent(action);
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload),
+            redirect: 'follow'
+        });
+        return await resp.json();
+    } catch (err) {
+        console.error('API Error:', err);
+        return { ok: false, error: 'Bağlantı hatası: ' + err.message };
+    }
+}
+
+function formatDate(d) {
+    if (!d) return '—';
+    const parts = String(d).split('-');
+    if (parts.length !== 3) return d;
+    return `${parts[2]}.${parts[1]}.${parts[0]}`;
+}
+
+function formatTime(t) {
+    if (!t) return '—';
+    return String(t).substring(0, 5);
+}
+
+const TURKCE_AYLAR = ['', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+                       'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+function turkceAy(ay) { return TURKCE_AYLAR[ay] || ''; }
+
+function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ============================================================
+// MESAİ HESAPLAMA (PHP'DEN BİREBİR PORT)
+// ============================================================
+function hesaplaMesai(tarih, basSaat, bitSaat) {
+    function timeToMinutes(t) {
+        const [h, m] = t.split(':').map(Number);
+        return h * 60 + m;
+    }
+    let basMin = timeToMinutes(basSaat);
+    let bitMin = timeToMinutes(bitSaat);
+    if (bitMin <= basMin) bitMin += 1440;
+
+    const toplamDk = bitMin - basMin;
+    const tumSaat = toplamDk / 60;
+
+    let geceDk = 0;
+    for (let m = 0; m < toplamDk; m++) {
+        const min = (basMin + m) % 1440;
+        const saat = Math.floor(min / 60);
+        if (saat >= 20 || saat < 6) geceDk++;
+    }
+    const geceSaat = Math.round(geceDk / 60 * 100) / 100;
+    const gunduzSaat = Math.round((tumSaat - geceSaat) * 100) / 100;
+
+    const d = new Date(tarih);
+    const pazarAdet = d.getDay() === 0 ? 1 : 0;
+
+    return {
+        toplam: gunduzSaat,
+        gece: geceSaat,
+        pazar: pazarAdet
+    };
+}
+
+function haftalikDonemler(yil, ay) {
+    const sonGun = new Date(yil, ay, 0).getDate();
+    const donemler = [];
+    let baslangic = 1;
+    while (baslangic <= sonGun) {
+        let bitis = baslangic;
+        while (bitis < sonGun) {
+            const dt = new Date(yil, ay - 1, bitis);
+            if (dt.getDay() === 5) break; // Friday
+            bitis++;
+        }
+        donemler.push({ baslangic, bitis });
+        baslangic = bitis + 1;
+    }
+    return donemler;
+}
+
+// ============================================================
+// OTURUM YÖNETİMİ
+// ============================================================
+function saveSession(user) {
+    localStorage.setItem('puantaj_user', JSON.stringify(user));
+    currentUser = user;
+}
+
+function loadSession() {
+    const data = localStorage.getItem('puantaj_user');
+    if (data) {
+        currentUser = JSON.parse(data);
+        return true;
+    }
+    return false;
+}
+
+function clearSession() {
+    localStorage.removeItem('puantaj_user');
+    currentUser = null;
+}
+
+function isAdmin() { return currentUser && currentUser.rol === 'admin'; }
+
+// ============================================================
+// LOGIN
+// ============================================================
+function initLoginDots() {
+    const dotsContainer = document.getElementById('bg-dots');
+    dotsContainer.innerHTML = '';
+    for (let i = 0; i < 12; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot';
+        dot.style.cssText = `left:${5+Math.random()*90}%;top:${5+Math.random()*90}%;animation-delay:${(Math.random()*6).toFixed(1)}s;animation-duration:${6+Math.random()*6}s;width:${4+Math.random()*6}px;height:${4+Math.random()*6}px;opacity:${0.2+Math.random()*0.4};`;
+        dotsContainer.appendChild(dot);
+    }
+}
+
+document.getElementById('loginForm').addEventListener('submit', async function(ev) {
+    ev.preventDefault();
+    const kullanici_adi = document.getElementById('login-kullanici').value.trim();
+    const sifre = document.getElementById('login-sifre').value;
+
+    if (!kullanici_adi || !sifre) {
+        document.getElementById('login-error').classList.remove('d-none');
+        document.getElementById('login-error-text').textContent = 'Kullanıcı adı ve şifre boş bırakılamaz.';
+        return;
+    }
+
+    showLoading();
+    const res = await apiCall('login', { kullanici_adi, sifre });
+    hideLoading();
+
+    if (res.ok) {
+        saveSession(res.user);
+        showApp();
+    } else {
+        document.getElementById('login-error').classList.remove('d-none');
+        document.getElementById('login-error-text').textContent = res.error || 'Giriş başarısız.';
+    }
+});
+
+function toggleAuthView(view, event) {
+    if (event) event.preventDefault();
+    if (view === 'register') {
+        document.getElementById('login-card').style.display = 'none';
+        document.getElementById('register-card').style.display = 'block';
+        loadRegisterBirimler();
+    } else {
+        document.getElementById('register-card').style.display = 'none';
+        document.getElementById('login-card').style.display = 'block';
+    }
+}
+
+async function loadRegisterBirimler() {
+    const select = document.getElementById('reg-birim');
+    select.innerHTML = '<option value="">Yükleniyor...</option>';
+    
+    const res = await apiCall('getBirimler');
+    if (res.ok) {
+        let html = '<option value="">— Birim Seçiniz —</option>';
+        res.birimler.forEach(b => {
+           html += `<option value="${e(b.ad)}">${e(b.ad)}</option>`;
+        });
+        select.innerHTML = html;
+    } else {
+        select.innerHTML = '<option value="">Birimler yüklenemedi</option>';
+    }
+}
+
+document.getElementById('registerForm').addEventListener('submit', async function(ev) {
+    ev.preventDefault();
+    const alertBox = document.getElementById('register-error');
+    const alertText = document.getElementById('register-error-text');
+    
+    const data = {
+        ad_soyad: document.getElementById('reg-adsoyad').value.trim(),
+        kullanici_adi: document.getElementById('reg-kullanici').value.trim(),
+        sifre: document.getElementById('reg-sifre').value,
+        telefon: document.getElementById('reg-telefon').value.trim(),
+        eposta: document.getElementById('reg-eposta').value.trim(),
+        gorev_yeri: document.getElementById('reg-birim').value
+    };
+
+    if (!data.ad_soyad || !data.kullanici_adi || !data.sifre) {
+        alertBox.className = 'alert alert-danger';
+        alertText.textContent = 'Lütfen tüm alanları doldurun.';
+        return;
+    }
+
+    showLoading();
+    const res = await apiCall('register', data);
+    hideLoading();
+
+    if (res.ok) {
+        alertBox.className = 'alert alert-success';
+        alertBox.style.fontSize = '0.85rem';
+        alertText.innerHTML = `<strong>Kayıt başarıyla yapıldı!</strong><br>Belirlediğiniz kullanıcı adı ve şifre ile sisteme giriş yapabilirsiniz.<br><small class="mt-1 d-block"><i class="fa-solid fa-key me-1"></i>Şifrenizi unutursanız yönetici ile iletişime geçin.</small>`;
+        document.getElementById('registerForm').reset();
+        setTimeout(() => toggleAuthView('login'), 5000);
+    } else {
+        alertBox.className = 'alert alert-danger';
+        alertText.textContent = res.error || 'Kayıt başarısız.';
+    }
+});
+
+function showLogin() {
+    document.getElementById('login-page').style.display = 'flex';
+    document.getElementById('app-layout').style.display = 'none';
+    toggleAuthView('login');
+    initLoginDots();
+}
+
+function showApp() {
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('app-layout').style.display = 'block';
+    document.getElementById('login-error').classList.add('d-none');
+    document.getElementById('login-kullanici').value = '';
+    document.getElementById('login-sifre').value = '';
+
+    // Sidebar kullanıcı bilgileri
+    document.getElementById('sidebar-avatar').textContent = (currentUser.ad_soyad || '?')[0].toUpperCase();
+    document.getElementById('sidebar-name').textContent = currentUser.ad_soyad;
+    document.getElementById('sidebar-role').textContent = isAdmin() ? 'Yönetici' : 'Personel';
+    document.getElementById('topbar-gorev').textContent = currentUser.gorev_yeri || 'Görev Yeri Belirtilmemiş';
+    document.getElementById('admin-menu').style.display = isAdmin() ? 'block' : 'none';
+
+    const today = new Date();
+    document.getElementById('topbar-subtitle').textContent =
+        `${String(today.getDate()).padStart(2,'0')}.${String(today.getMonth()+1).padStart(2,'0')}.${today.getFullYear()} — Hoş geldiniz, ${currentUser.ad_soyad}`;
+
+    navigateTo('dashboard');
+}
+
+function logout() {
+    clearSession();
+    showLogin();
+}
+
+// ============================================================
+// SIDEBAR
+// ============================================================
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('show');
+});
+document.getElementById('sidebarOverlay').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+});
+
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+}
+
+// ============================================================
+// SPA ROUTER
+// ============================================================
+function navigateTo(page, params = {}) {
+    closeSidebar();
+    currentPage = page;
+
+    // Tüm page-view gizle
+    document.querySelectorAll('.page-view').forEach(el => el.classList.remove('active-page'));
+    const target = document.getElementById('page-' + page);
+    if (target) target.classList.add('active-page');
+
+    // Sidebar active
+    document.querySelectorAll('.sidebar-nav a').forEach(a => {
+        a.classList.toggle('active', a.dataset.page === page);
+    });
+
+    // Admin kontrolü
+    const adminPages = ['personel', 'personel-form', 'birimler', 'ayarlar'];
+    if (adminPages.includes(page) && !isAdmin()) {
+        navigateTo('dashboard');
+        return;
+    }
+
+    // Sayfa yükle
+    const titles = {
+        'dashboard': 'Dashboard',
+        'mesai': params.id ? 'Mesai Düzenle' : 'Mesai Ekle',
+        'rapor': 'Mesai Raporu',
+        'personel': 'Personel Yönetimi',
+        'personel-form': params.id ? 'Personel Düzenle' : 'Personel Ekle',
+        'birimler': 'Birimler (Görev Yerleri)',
+        'ayarlar': 'Sistem Ayarları',
+        'profil': 'Profil Ayarlarım'
+    };
+    document.getElementById('topbar-title').textContent = titles[page] || 'Dashboard';
+
+    switch(page) {
+        case 'dashboard': renderDashboard(); break;
+        case 'mesai': renderMesai(params); break;
+        case 'rapor': renderRapor(params); break;
+        case 'personel': renderPersonel(); break;
+        case 'personel-form': renderPersonelForm(params); break;
+        case 'birimler': renderBirimler(); break;
+        case 'ayarlar': renderAyarlar(); break;
+        case 'profil': renderProfil(); break;
+    }
+    window.scrollTo(0, 0);
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function renderDashboard() {
+    const container = document.getElementById('page-dashboard');
+    container.innerHTML = '<div class="text-center py-5 text-muted"><div class="loading-spinner mx-auto mb-3" style="border-color:rgba(0,0,0,.1);border-top-color:var(--brand-secondary);width:32px;height:32px;"></div>Yükleniyor...</div>';
+
+    const [statsRes, kayitRes] = await Promise.all([
+        apiCall('getDashboardStats'),
+        apiCall('getSonKayitlar')
+    ]);
+
+    let html = '<div class="row g-3 mb-4">';
+
+    if (isAdmin()) {
+        html += `<div class="col-6 col-xl-3"><div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#1e40af,#3b82f6);"><i class="fa-solid fa-users"></i></div>
+            <div><div class="stat-label">Aktif Personel</div><div class="stat-value">${statsRes.ok ? statsRes.totalPersonel : '—'}</div></div>
+        </div></div>`;
+    }
+
+    html += `<div class="col-6 col-xl-3"><div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#0891b2,#06b6d4);"><i class="fa-solid fa-calendar-check"></i></div>
+        <div><div class="stat-label">${isAdmin() ? 'Bu Ay Kayıt' : 'Toplam Kayıt'}</div><div class="stat-value">${statsRes.ok ? statsRes.totalKayit : '—'}</div></div>
+    </div></div>`;
+    html += `<div class="col-6 col-xl-3"><div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#059669,#10b981);"><i class="fa-solid fa-clock"></i></div>
+        <div><div class="stat-label">Bu Ay Toplam Saat</div><div class="stat-value">${statsRes.ok ? statsRes.totalSaat.toFixed(1) : '—'}</div></div>
+    </div></div>`;
+    html += `<div class="col-6 col-xl-3"><div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);"><i class="fa-solid fa-moon"></i></div>
+        <div><div class="stat-label">Bu Ay Gece Mesaisi</div><div class="stat-value">${statsRes.ok ? statsRes.totalGece.toFixed(1) : '—'}</div></div>
+    </div></div>`;
+    html += '</div>';
+
+    // Son Kayıtlar
+    const kayitlar = kayitRes.ok ? kayitRes.kayitlar : [];
+    html += `<div class="card-modern">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <span><i class="fa-solid fa-list-check me-2 text-primary"></i>Son Mesai Kayıtları</span>
+            <a class="btn btn-sm btn-primary-custom no-print" style="cursor:pointer;" onclick="navigateTo('mesai')">
+                <i class="fa-solid fa-plus me-1"></i> Yeni Ekle
+            </a>
+        </div>
+        <div class="card-body p-0">`;
+
+    if (kayitlar.length === 0) {
+        html += `<div class="text-center py-5 text-muted">
+            <i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>Henüz mesai kaydı yok.
+            <br><a class="btn btn-primary-custom mt-3" style="cursor:pointer;" onclick="navigateTo('mesai')">İlk Mesaini Ekle</a>
+        </div>`;
+    } else {
+        html += `<div class="table-responsive"><table class="table-modern w-100"><thead><tr>
+            <th>Personel</th><th>Görev Yeri</th><th>Tarih</th><th>Açıklama</th>
+            <th>Başlangıç</th><th>Bitiş</th><th class="text-center">Toplam</th>
+            <th class="text-center">Gece</th><th class="text-center">Pazar</th>
+            <th class="no-print"></th>
+        </tr></thead><tbody>`;
+
+        kayitlar.forEach(k => {
+            const canEdit = isAdmin() || Number(k.personel_id) === currentUser.id;
+            html += `<tr>
+                <td class="fw-500">${e(k.ad_soyad)}</td>
+                <td><span class="text-muted">${e(k.gorev_yeri)}</span></td>
+                <td>${formatDate(k.tarih)}</td>
+                <td>${k.aciklama ? e(k.aciklama) : '<span class="text-muted">—</span>'}</td>
+                <td>${formatTime(k.baslangic_saati)}</td>
+                <td>${formatTime(k.bitis_saati)}</td>
+                <td class="text-center"><span class="badge bg-primary">${k.toplam_saat}</span></td>
+                <td class="text-center">${Number(k.gece_mesaisi) > 0 ? `<span class="badge" style="background:#7c3aed">${k.gece_mesaisi}</span>` : '<span class="text-muted">—</span>'}</td>
+                <td class="text-center">${Number(k.pazar_mesaisi) > 0 ? `<span class="badge bg-warning text-dark">${parseInt(k.pazar_mesaisi)}</span>` : '<span class="text-muted">—</span>'}</td>
+                <td class="no-print">${canEdit ? `<div class="d-flex gap-1">
+                    <button class="btn-action btn-edit" title="Düzenle" onclick="navigateTo('mesai',{id:${k.id}})"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-action btn-del" title="Sil" onclick="silMesai(${k.id})"><i class="fa-solid fa-trash"></i></button>
+                </div>` : ''}</td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+    }
+    html += '</div></div>';
+    container.innerHTML = html;
+}
+
+async function silMesai(id) {
+    if (!confirm('Bu kaydı silmek istediğinize emin misiniz?')) return;
+    showLoading();
+    const res = await apiCall('deleteMesai', { id });
+    hideLoading();
+    if (res.ok) {
+        flashMesaj('success', 'Mesai kaydı silindi.');
+        if (currentPage === 'dashboard') renderDashboard();
+        else navigateTo('dashboard');
+    } else {
+        flashMesaj('danger', res.error || 'Silme hatası.');
+    }
+}
+
+// ============================================================
+// MESAİ EKLE/DÜZENLE
+// ============================================================
+async function renderMesai(params = {}) {
+    const container = document.getElementById('page-mesai');
+    const editId = params.id || 0;
+    document.getElementById('topbar-title').textContent = editId ? 'Mesai Düzenle' : 'Mesai Ekle';
+
+    container.innerHTML = '<div class="text-center py-5 text-muted"><div class="loading-spinner mx-auto mb-3" style="border-color:rgba(0,0,0,.1);border-top-color:var(--brand-secondary);width:32px;height:32px;"></div>Yükleniyor...</div>';
+
+    const [persRes, editRes] = await Promise.all([
+        apiCall('getActivePersoneller'),
+        editId ? apiCall('getMesaiById', { id: editId }) : Promise.resolve({ ok: true, kayit: null })
+    ]);
+
+    const personeller = persRes.ok ? persRes.personeller : [];
+    const kayit = editRes.ok ? editRes.kayit : null;
+
+    const f = {
+        personel_id: kayit ? kayit.personel_id : (isAdmin() ? '' : currentUser.id),
+        tarih: kayit ? kayit.tarih : todayStr(),
+        aciklama: kayit ? kayit.aciklama : '',
+        baslangic_saati: kayit ? formatTime(kayit.baslangic_saati) : '',
+        bitis_saati: kayit ? formatTime(kayit.bitis_saati) : ''
+    };
+
+    let personelHtml;
+    if (isAdmin()) {
+        personelHtml = `<select class="form-select" id="mesai-personel" required>
+            <option value="">— Personel seçin —</option>
+            ${personeller.map(p => `<option value="${p.id}" ${f.personel_id == p.id ? 'selected' : ''}>${e(p.ad_soyad)}${p.gorev_yeri ? ' (' + e(p.gorev_yeri) + ')' : ''}</option>`).join('')}
+        </select>`;
+    } else {
+        personelHtml = `<input type="text" class="form-control" value="${e(currentUser.ad_soyad)}" readonly>
+            <input type="hidden" id="mesai-personel" value="${currentUser.id}">`;
+    }
+
+    let html = `<div class="row justify-content-center"><div class="col-xl-7 col-lg-9">
+    <div class="card-modern">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <span><i class="fa-solid fa-${editId ? 'pen' : 'plus-circle'} me-2 text-primary"></i>${editId ? 'Mesai Kaydını Düzenle' : 'Yeni Mesai Kaydı'}</span>
+            <a class="btn btn-sm btn-outline-secondary no-print" style="cursor:pointer;" onclick="navigateTo('dashboard')">
+                <i class="fa-solid fa-arrow-left me-1"></i> Geri
+            </a>
+        </div>
+        <div class="card-body">
+            <form id="mesaiForm">
+                <div class="mb-3">
+                    <label class="form-label"><i class="fa-solid fa-user me-1 text-primary"></i> Personel</label>
+                    ${personelHtml}
+                </div>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label for="mesai-tarih" class="form-label"><i class="fa-solid fa-calendar me-1 text-primary"></i> Tarih</label>
+                        <input type="date" class="form-control" id="mesai-tarih" value="${e(f.tarih)}" required>
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="mesai-aciklama" class="form-label"><i class="fa-solid fa-tag me-1 text-primary"></i> Açıklama (Etkinlik)</label>
+                        <input type="text" class="form-control" id="mesai-aciklama" placeholder="Düğün, Kına, Konser…" value="${e(f.aciklama)}" maxlength="255">
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="mesai-baslangic" class="form-label"><i class="fa-solid fa-play me-1 text-success"></i> Başlangıç Saati</label>
+                        <input type="time" class="form-control" id="mesai-baslangic" value="${e(f.baslangic_saati)}" required>
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="mesai-bitis" class="form-label"><i class="fa-solid fa-stop me-1 text-danger"></i> Bitiş Saati</label>
+                        <input type="time" class="form-control" id="mesai-bitis" value="${e(f.bitis_saati)}" required>
+                    </div>
+                </div>
+                <div id="mesai-onizleme" class="mt-3 p-3 rounded-3 d-none" style="background:rgba(59,130,246,.07);border:1px dashed rgba(59,130,246,.3);">
+                    <div class="fw-600 mb-2 text-primary"><i class="fa-solid fa-calculator me-1"></i> Tahmini Hesaplama</div>
+                    <div class="d-flex flex-wrap gap-3">
+                        <div class="text-center"><div class="text-muted" style="font-size:.75rem">Toplam</div><div class="fw-700 fs-5" id="prev-toplam">—</div></div>
+                        <div class="text-center"><div class="text-muted" style="font-size:.75rem">Gece</div><div class="fw-700 fs-5" id="prev-gece" style="color:#7c3aed">—</div></div>
+                        <div class="text-center"><div class="text-muted" style="font-size:.75rem">Pazar</div><div class="fw-700 fs-5 text-warning" id="prev-pazar">—</div></div>
+                        <div class="text-center" id="prev-info-box"><span id="prev-info" class="badge bg-secondary"></span></div>
+                    </div>
+                </div>
+                <hr class="my-4">
+                <div class="d-flex gap-2 justify-content-end">
+                    <a class="btn btn-outline-secondary" style="cursor:pointer;" onclick="navigateTo('dashboard')">İptal</a>
+                    <button type="submit" class="btn btn-primary-custom"><i class="fa-solid fa-floppy-disk me-1"></i>${editId ? 'Güncelle' : 'Kaydet'}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card-modern mt-3" style="border-left:4px solid var(--brand-accent);">
+        <div class="card-body py-2 px-3">
+            <small class="text-muted">
+                <i class="fa-solid fa-circle-info me-1 text-info"></i>
+                <strong>Gece Mesaisi:</strong> 20:00–06:00 arasındaki saatler otomatik hesaplanır.
+                <strong class="ms-2">Pazar Mesaisi:</strong> Seçilen tarih Pazar ise 1 adet Pazar mesaisi eklenir.
+                Bitiş saati başlangıçtan küçükse gece yarısı geçişi otomatik algılanır.
+            </small>
+        </div>
+    </div>
+    </div></div>`;
+
+    container.innerHTML = html;
+
+    // Önizleme hesaplama
+    const tarihEl = document.getElementById('mesai-tarih');
+    const basEl = document.getElementById('mesai-baslangic');
+    const bitEl = document.getElementById('mesai-bitis');
+    const boxEl = document.getElementById('mesai-onizleme');
+
+    function hesaplaOnizleme() {
+        const tarih = tarihEl.value;
+        const bas = basEl.value;
+        const bit = bitEl.value;
+        if (!tarih || !bas || !bit) { boxEl.classList.add('d-none'); return; }
+
+        const h = hesaplaMesai(tarih, bas, bit);
+        document.getElementById('prev-toplam').textContent = h.toplam + ' s';
+        document.getElementById('prev-gece').textContent = h.gece.toFixed(2) + ' s';
+        document.getElementById('prev-pazar').textContent = h.pazar + ' Adet';
+
+        const infoBadge = document.getElementById('prev-info');
+        const d = new Date(tarih);
+        if (d.getDay() === 0) {
+            infoBadge.textContent = '📅 PAZAR günü';
+            infoBadge.className = 'badge bg-warning text-dark';
+        } else {
+            const gunler = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+            infoBadge.textContent = gunler[d.getDay()];
+            infoBadge.className = 'badge bg-secondary';
+        }
+        boxEl.classList.remove('d-none');
+    }
+
+    tarihEl.addEventListener('change', hesaplaOnizleme);
+    basEl.addEventListener('change', hesaplaOnizleme);
+    bitEl.addEventListener('change', hesaplaOnizleme);
+    hesaplaOnizleme();
+
+    // Form submit
+    document.getElementById('mesaiForm').addEventListener('submit', async function(ev) {
+        ev.preventDefault();
+        const personel_id = document.getElementById('mesai-personel').value;
+        const tarih = tarihEl.value;
+        const aciklama = document.getElementById('mesai-aciklama').value;
+        const baslangic_saati = basEl.value;
+        const bitis_saati = bitEl.value;
+
+        if (!personel_id) { flashMesaj('danger', 'Personel seçiniz.'); return; }
+        if (!tarih) { flashMesaj('danger', 'Tarih zorunludur.'); return; }
+        if (!baslangic_saati) { flashMesaj('danger', 'Başlangıç saati zorunludur.'); return; }
+        if (!bitis_saati) { flashMesaj('danger', 'Bitiş saati zorunludur.'); return; }
+        if (baslangic_saati === bitis_saati) { flashMesaj('danger', 'Başlangıç ve bitiş saati aynı olamaz.'); return; }
+
+        const hesap = hesaplaMesai(tarih, baslangic_saati, bitis_saati);
+
+        showLoading();
+        const res = await apiCall('saveMesai', {
+            id: editId,
+            personel_id,
+            tarih,
+            aciklama,
+            baslangic_saati,
+            bitis_saati,
+            toplam_saat: hesap.toplam,
+            gece_mesaisi: hesap.gece,
+            pazar_mesaisi: hesap.pazar
+        });
+        hideLoading();
+
+        if (res.ok) {
+            flashMesaj('success', res.message || 'Kaydedildi.');
+            navigateTo('dashboard');
+        } else {
+            flashMesaj('danger', res.error || 'Kaydetme hatası.');
+        }
+    });
+}
+
+// ============================================================
+// RAPOR
+// ============================================================
+async function renderRapor(params = {}) {
+    const container = document.getElementById('page-rapor');
+    const now = new Date();
+    const ay = params.ay || (now.getMonth() + 1);
+    const yil = params.yil || now.getFullYear();
+
+    // Filtre formu
+    let filterHtml = `<div class="card-modern mb-3 no-print"><div class="card-body">
+        <form id="raporFiltre" class="row g-3 align-items-end">
+            <div class="col-sm-4">
+                <label class="form-label fw-500">Ay</label>
+                <select class="form-select" id="filtre-ay">
+                    ${Array.from({length:12}, (_,i) => `<option value="${i+1}" ${i+1===ay?'selected':''}>${turkceAy(i+1)}</option>`).join('')}
+                </select>
+            </div>
+            <div class="col-sm-4">
+                <label class="form-label fw-500">Yıl</label>
+                <select class="form-select" id="filtre-yil">
+                    ${Array.from({length:4}, (_,i) => { const y = now.getFullYear()-2+i; return `<option value="${y}" ${y===yil?'selected':''}>${y}</option>`; }).join('')}
+                </select>
+            </div>
+            <div class="col-sm-4">
+                <button type="submit" class="btn btn-primary-custom w-100"><i class="fa-solid fa-filter me-1"></i> Filtrele</button>
+            </div>
+        </form></div></div>`;
+
+    container.innerHTML = filterHtml + '<div id="rapor-content"><div class="text-center py-5 text-muted"><div class="loading-spinner mx-auto mb-3" style="border-color:rgba(0,0,0,.1);border-top-color:var(--brand-secondary);width:32px;height:32px;"></div>Yükleniyor...</div></div>';
+
+    document.getElementById('raporFiltre').addEventListener('submit', function(ev) {
+        ev.preventDefault();
+        renderRapor({
+            ay: parseInt(document.getElementById('filtre-ay').value),
+            yil: parseInt(document.getElementById('filtre-yil').value)
+        });
+    });
+
+    const res = await apiCall('getMesaiRapor', { ay, yil });
+    const raporContent = document.getElementById('rapor-content');
+
+    if (!res.ok) { raporContent.innerHTML = '<div class="alert alert-danger">Veri alınamadı.</div>'; return; }
+
+    const tumKayitlar = res.kayitlar || [];
+    if (tumKayitlar.length === 0) {
+        raporContent.innerHTML = `<div class="card-modern"><div class="text-center py-5 text-muted">
+            <i class="fa-solid fa-chart-bar fa-2x mb-2 d-block"></i>Bu dönemde mesai kaydı bulunamadı.
+        </div></div>`;
+        return;
+    }
+
+    // Pivot hesaplama
+    const donemler = haftalikDonemler(yil, ay);
+    const pivot = {};
+    const personelMeta = {};
+
+    tumKayitlar.forEach(k => {
+        const pid = k.personel_id;
+        const gun = parseInt(String(k.tarih).split('-')[2]);
+        let haftaIdx = 0;
+        donemler.forEach((d, idx) => {
+            if (gun >= d.baslangic && gun <= d.bitis) haftaIdx = idx;
+        });
+        if (!pivot[pid]) {
+            pivot[pid] = {};
+            donemler.forEach((d, idx) => { pivot[pid][idx] = {toplam:0, gece:0, pazar:0}; });
+        }
+        personelMeta[pid] = { ad_soyad: k.ad_soyad, gorev_yeri: k.gorev_yeri };
+        pivot[pid][haftaIdx].toplam += Number(k.toplam_saat || 0);
+        pivot[pid][haftaIdx].gece += Number(k.gece_mesaisi || 0);
+        pivot[pid][haftaIdx].pazar += Number(k.pazar_mesaisi || 0);
+    });
+
+    // Görev yeri gruplama
+    const gorevYerleri = {};
+    Object.keys(personelMeta).forEach(pid => {
+        const gy = personelMeta[pid].gorev_yeri || 'Diğer';
+        if (!gorevYerleri[gy]) gorevYerleri[gy] = [];
+        gorevYerleri[gy].push(pid);
+    });
+    const sortedGY = Object.keys(gorevYerleri).sort((a,b) => a.localeCompare(b, 'tr'));
+
+    // Başlık + aksiyonlar
+    let html = `<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2 no-print">
+        <div>
+            <h5 class="mb-0 fw-700"><i class="fa-solid fa-table-list me-1 text-primary"></i>${turkceAy(ay)} ${yil} — Mesai Raporu</h5>
+            <small class="text-muted">${Object.keys(personelMeta).length} personel, ${tumKayitlar.length} kayıt</small>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-print me-1"></i> Yazdır</button>
+            <button onclick="exportRaporWord(${ay},${yil})" class="btn btn-outline-primary btn-sm"><i class="fa-regular fa-file-word me-1"></i> Word'e Aktar</button>
+        </div>
+    </div>`;
+
+    // Print başlığı
+    html += `<div class="print-only"><h2 style="text-align:center;margin-bottom:4px;font-size:16pt;">MESAİ RAPORU</h2>
+        <p style="text-align:center;margin:0;font-size:10pt;">${turkceAy(ay)} ${yil}</p><hr></div>`;
+
+    // Tablo
+    const colCount = 2 + donemler.length * 3 + 3;
+    html += `<div class="card-modern"><div class="card-body p-0" style="overflow-x:auto;">
+    <table id="rapor-tablosu" class="w-100" style="border-collapse:collapse;font-size:.82rem;min-width:700px;">
+    <thead>
+        <tr style="background:#1e3a5f;color:#f1f5f9;">
+            <th rowspan="2" style="padding:.6rem .9rem;border:1px solid #2d4a6e;text-align:left;min-width:160px;">Personel</th>
+            <th rowspan="2" style="padding:.6rem .9rem;border:1px solid #2d4a6e;text-align:left;white-space:nowrap;">Görev Yeri</th>
+            ${donemler.map(d => `<th colspan="3" style="padding:.5rem .6rem;border:1px solid #2d4a6e;text-align:center;white-space:nowrap;">${d.baslangic}–${d.bitis} ${turkceAy(ay).toUpperCase()}</th>`).join('')}
+            <th colspan="3" style="padding:.5rem .6rem;border:1px solid #0f172a;background:#0f172a;text-align:center;white-space:nowrap;">Genel Toplam</th>
+        </tr>
+        <tr style="background:#2d4a6e;color:#cbd5e1;font-size:.73rem;">
+            ${donemler.map(() => `<th style="padding:.4rem .7rem;border:1px solid #3d5a7e;text-align:center;">Top.</th>
+            <th style="padding:.4rem .7rem;border:1px solid #3d5a7e;text-align:center;">Gece</th>
+            <th style="padding:.4rem .7rem;border:1px solid #3d5a7e;text-align:center;">Paz.</th>`).join('')}
+            <th style="padding:.4rem .7rem;border:1px solid #1e3a5f;text-align:center;background:#1a2e45;">Top.</th>
+            <th style="padding:.4rem .7rem;border:1px solid #1e3a5f;text-align:center;background:#1a2e45;">Gece</th>
+            <th style="padding:.4rem .7rem;border:1px solid #1e3a5f;text-align:center;background:#1a2e45;">Paz.</th>
+        </tr>
+    </thead><tbody>`;
+
+    let satirNo = 0;
+    sortedGY.forEach(gy => {
+        const pidList = gorevYerleri[gy];
+        html += `<tr><td colspan="${colCount}" style="padding:.5rem .9rem;background:#f0f4f9;border:1px solid #dde3ea;font-weight:700;color:#1e40af;font-size:.8rem;">
+            <i class="fa-solid fa-map-marker-alt" style="margin-right:5px;"></i>${e(gy)}</td></tr>`;
+
+        let grupTopT = 0, grupTopG = 0, grupTopP = 0;
+        pidList.forEach(pid => {
+            const meta = personelMeta[pid];
+            satirNo++;
+            const bgColor = satirNo % 2 === 0 ? '#f8fafc' : '#ffffff';
+            let gtT = 0, gtG = 0, gtP = 0;
+            donemler.forEach((d, idx) => {
+                gtT += pivot[pid][idx].toplam;
+                gtG += pivot[pid][idx].gece;
+                gtP += pivot[pid][idx].pazar;
+            });
+            grupTopT += gtT; grupTopG += gtG; grupTopP += gtP;
+
+            html += `<tr style="background:${bgColor};">
+                <td style="padding:.55rem .9rem;border:1px solid #e8edf3;font-weight:600;color:#1e293b;">${e(meta.ad_soyad)}</td>
+                <td style="padding:.55rem .9rem;border:1px solid #e8edf3;color:#64748b;font-size:.8rem;">${e(meta.gorev_yeri || '—')}</td>`;
+
+            donemler.forEach((d, idx) => {
+                const t = pivot[pid][idx].toplam, g = pivot[pid][idx].gece, p = pivot[pid][idx].pazar;
+                html += `<td style="padding:.55rem .7rem;border:1px solid #e8edf3;text-align:center;color:${t>0?'#1e40af':'#94a3b8'};font-weight:${t>0?'600':'400'};">${t>0?t.toFixed(2):'—'}</td>`;
+                html += `<td style="padding:.55rem .7rem;border:1px solid #e8edf3;text-align:center;color:${g>0?'#7c3aed':'#94a3b8'};font-weight:${g>0?'600':'400'};">${g>0?g.toFixed(2):'—'}</td>`;
+                html += `<td style="padding:.55rem .7rem;border:1px solid #e8edf3;text-align:center;color:${p>0?'#d97706':'#94a3b8'};font-weight:${p>0?'600':'400'};">${p>0?parseInt(p):'—'}</td>`;
+            });
+
+            html += `<td style="padding:.55rem .9rem;border:1px solid #d0d7e3;text-align:center;background:#f0f4ff;font-weight:700;color:#1e40af;">${gtT>0?gtT.toFixed(2):'—'}</td>
+                <td style="padding:.55rem .9rem;border:1px solid #d0d7e3;text-align:center;background:#f5f0ff;font-weight:700;color:#7c3aed;">${gtG>0?gtG.toFixed(2):'—'}</td>
+                <td style="padding:.55rem .9rem;border:1px solid #d0d7e3;text-align:center;background:#fffbf0;font-weight:700;color:#d97706;">${gtP>0?parseInt(gtP):'—'}</td></tr>`;
+        });
+
+        // Görev yeri alt toplamı
+        html += `<tr style="background:#e8f0fd;"><td colspan="2" style="padding:.5rem .9rem;border:1px solid #c7d4f0;font-weight:700;color:#1e40af;font-size:.8rem;">
+            <i class="fa-solid fa-sigma" style="margin-right:4px;"></i>${e(gy)} Toplamı</td>`;
+        donemler.forEach((d, idx) => {
+            let hGT = 0, hGG = 0, hGP = 0;
+            pidList.forEach(pid => { hGT += pivot[pid][idx].toplam; hGG += pivot[pid][idx].gece; hGP += pivot[pid][idx].pazar; });
+            html += `<td style="padding:.5rem .7rem;border:1px solid #c7d4f0;text-align:center;font-weight:700;color:#1e40af;">${hGT>0?hGT.toFixed(2):'—'}</td>
+                <td style="padding:.5rem .7rem;border:1px solid #c7d4f0;text-align:center;font-weight:700;color:#7c3aed;">${hGG>0?hGG.toFixed(2):'—'}</td>
+                <td style="padding:.5rem .7rem;border:1px solid #c7d4f0;text-align:center;font-weight:700;color:#d97706;">${hGP>0?parseInt(hGP):'—'}</td>`;
+        });
+        html += `<td style="padding:.5rem .9rem;border:1px solid #c7d4f0;text-align:center;background:#d8e8ff;font-weight:800;color:#1e40af;">${grupTopT>0?grupTopT.toFixed(2):'—'}</td>
+            <td style="padding:.5rem .9rem;border:1px solid #c7d4f0;text-align:center;background:#ebe0ff;font-weight:800;color:#7c3aed;">${grupTopG>0?grupTopG.toFixed(2):'—'}</td>
+            <td style="padding:.5rem .9rem;border:1px solid #c7d4f0;text-align:center;background:#fff3cc;font-weight:800;color:#d97706;">${grupTopP>0?parseInt(grupTopP):'—'}</td></tr>`;
+    });
+
+    // Genel toplam
+    const genelT = tumKayitlar.reduce((s, k) => s + Number(k.toplam_saat || 0), 0);
+    const genelG = tumKayitlar.reduce((s, k) => s + Number(k.gece_mesaisi || 0), 0);
+    const genelP = tumKayitlar.reduce((s, k) => s + Number(k.pazar_mesaisi || 0), 0);
+
+    html += `<tr style="background:#1e40af;color:#ffffff;">
+        <td colspan="2" style="padding:.65rem .9rem;border:1px solid #1a3890;font-weight:700;font-size:.9rem;">
+            <i class="fa-solid fa-calculator" style="margin-right:6px;"></i>GENEL TOPLAM — ${turkceAy(ay)} ${yil}</td>`;
+    donemler.forEach((d, idx) => {
+        let hT = 0, hG = 0, hP = 0;
+        Object.keys(pivot).forEach(pid => { hT += pivot[pid][idx].toplam; hG += pivot[pid][idx].gece; hP += pivot[pid][idx].pazar; });
+        html += `<td style="padding:.65rem .7rem;border:1px solid #1a3890;text-align:center;font-weight:700;">${hT>0?hT.toFixed(2):'—'}</td>
+            <td style="padding:.65rem .7rem;border:1px solid #1a3890;text-align:center;font-weight:700;">${hG>0?hG.toFixed(2):'—'}</td>
+            <td style="padding:.65rem .7rem;border:1px solid #1a3890;text-align:center;font-weight:700;">${hP>0?parseInt(hP):'—'}</td>`;
+    });
+    html += `<td style="padding:.65rem .9rem;border:1px solid #1a3890;text-align:center;background:#1a3890;font-weight:800;font-size:1rem;">${genelT.toFixed(2)}</td>
+        <td style="padding:.65rem .9rem;border:1px solid #1a3890;text-align:center;background:#1a3890;font-weight:800;font-size:1rem;">${genelG.toFixed(2)}</td>
+        <td style="padding:.65rem .9rem;border:1px solid #1a3890;text-align:center;background:#1a3890;font-weight:800;font-size:1rem;">${parseInt(genelP)}</td></tr>`;
+
+    html += '</tbody></table></div></div>';
+    raporContent.innerHTML = html;
+}
+
+// Word export
+function exportRaporWord(ay, yil) {
+    const table = document.getElementById('rapor-tablosu');
+    if (!table) { flashMesaj('danger', 'Rapor tablosu bulunamadı.'); return; }
+
+    const htmlContent = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8"><meta name="ProgId" content="Word.Document">
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom></w:WordDocument></xml><![endif]-->
+<style>@page{size:A4 landscape;margin:1.5cm 1cm;}body{font-family:Calibri,Arial,sans-serif;font-size:9pt;color:#000;}
+h2{text-align:center;font-size:14pt;margin-bottom:4px;}p.sub{text-align:center;font-size:9pt;color:#444;margin-top:0;}
+table{width:100%;border-collapse:collapse;font-size:8.5pt;margin-top:12px;}th{background:#1E3A5F;color:#fff;padding:5px 6px;border:1px solid #2d4e80;text-align:center;}
+td{padding:4px 6px;border:1px solid #c5ccd6;}</style></head>
+<body><h2>MESAİ RAPORU</h2><p class="sub">${turkceAy(ay)} ${yil}</p>${table.outerHTML}</body></html>`;
+
+    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Mesai_Raporu_${turkceAy(ay)}_${yil}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    flashMesaj('success', 'Word dosyası indiriliyor...');
+}
+
+// ============================================================
+// PERSONEL (Admin)
+// ============================================================
+async function renderPersonel() {
+    const container = document.getElementById('page-personel');
+    container.innerHTML = '<div class="text-center py-5 text-muted"><div class="loading-spinner mx-auto mb-3" style="border-color:rgba(0,0,0,.1);border-top-color:var(--brand-secondary);width:32px;height:32px;"></div>Yükleniyor...</div>';
+
+    const res = await apiCall('getPersoneller');
+    const personeller = res.ok ? res.personeller : [];
+
+    let html = `<div class="d-flex align-items-center justify-content-between mb-3 no-print">
+        <div><h5 class="mb-0 fw-700">Personel Listesi</h5><small class="text-muted">${personeller.length} kişi kayıtlı</small></div>
+        <a class="btn btn-primary-custom" style="cursor:pointer;" onclick="navigateTo('personel-form')"><i class="fa-solid fa-user-plus me-1"></i> Yeni Personel</a>
+    </div>`;
+
+    html += '<div class="card-modern"><div class="card-body p-0">';
+    if (personeller.length === 0) {
+        html += '<div class="text-center py-5 text-muted"><i class="fa-solid fa-users fa-2x mb-2 d-block"></i>Henüz personel kaydı yok.</div>';
+    } else {
+        html += `<div class="table-responsive"><table class="table-modern w-100"><thead><tr>
+            <th>#</th><th>Ad Soyad</th><th>Kullanıcı Adı</th><th>Görev Yeri</th><th>Rol</th>
+            <th class="text-center">Kayıt</th><th class="no-print text-end">İşlem</th>
+        </tr></thead><tbody>`;
+
+        personeller.forEach((p, i) => {
+            html += `<tr>
+                <td class="text-muted">${i + 1}</td>
+                <td class="fw-500">${e(p.ad_soyad)}</td>
+                <td><code style="font-size:.82rem">${e(p.kullanici_adi)}</code></td>
+                <td>${e(p.gorev_yeri || '—')}</td>
+                <td>${p.rol === 'admin' ? '<span class="badge-role badge-admin"><i class="fa-solid fa-shield-halved"></i> Admin</span>' : '<span class="badge-role badge-employee"><i class="fa-solid fa-user"></i> Personel</span>'}</td>
+                <td class="text-center"><span class="badge bg-secondary">${p.kayit_sayisi || 0}</span></td>
+                <td class="no-print text-end"><div class="d-flex gap-1 justify-content-end">
+                    <button class="btn-action btn-edit" title="Düzenle" onclick="navigateTo('personel-form',{id:${p.id}})"><i class="fa-solid fa-pen"></i></button>
+                    ${Number(p.id) !== currentUser.id ? `<button class="btn-action btn-del" title="Sil" onclick="silPersonel(${p.id},'${e(p.ad_soyad).replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>` : ''}
+                </div></td>
+            </tr>`;
+        });
+        html += '</tbody></table></div>';
+    }
+    html += '</div></div>';
+    container.innerHTML = html;
+}
+
+async function silPersonel(id, ad) {
+    if (!confirm(`${ad} adlı personeli silmek istediğinize emin misiniz?\nTüm mesai kayıtları da silinecektir.`)) return;
+    showLoading();
+    const res = await apiCall('deletePersonel', { id });
+    hideLoading();
+    if (res.ok) { flashMesaj('success', ad + ' silindi.'); renderPersonel(); }
+    else flashMesaj('danger', res.error || 'Silme hatası.');
+}
+
+// ============================================================
+// PERSONEL FORM
+// ============================================================
+async function renderPersonelForm(params = {}) {
+    const container = document.getElementById('page-personel-form');
+    const editId = params.id || 0;
+    document.getElementById('topbar-title').textContent = editId ? 'Personel Düzenle' : 'Personel Ekle';
+
+    container.innerHTML = '<div class="text-center py-5 text-muted"><div class="loading-spinner mx-auto mb-3" style="border-color:rgba(0,0,0,.1);border-top-color:var(--brand-secondary);width:32px;height:32px;"></div>Yükleniyor...</div>';
+
+    const [personelRes, birimRes] = await Promise.all([
+        editId ? apiCall('getPersonelById', { id: editId }) : Promise.resolve({ ok: true, personel: null }),
+        apiCall('getBirimler')
+    ]);
+
+    const kayit = personelRes.ok ? personelRes.personel : null;
+    const birimler = birimRes.ok ? birimRes.birimler : [];
+
+    const f = {
+        ad_soyad: kayit ? kayit.ad_soyad : '',
+        kullanici_adi: kayit ? kayit.kullanici_adi : '',
+        rol: kayit ? kayit.rol : 'employee',
+        gorev_yeri: kayit ? kayit.gorev_yeri : '',
+        telefon: kayit ? kayit.telefon : '',
+        eposta: kayit ? kayit.eposta : ''
+    };
+
+    let html = `<div class="row justify-content-center"><div class="col-xl-6 col-lg-8">
+    <div class="card-modern">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <span><i class="fa-solid fa-${editId ? 'pen' : 'user-plus'} me-2 text-primary"></i>${editId ? 'Personel Düzenle' : 'Yeni Personel Ekle'}</span>
+            <a class="btn btn-sm btn-outline-secondary" style="cursor:pointer;" onclick="navigateTo('personel')"><i class="fa-solid fa-arrow-left me-1"></i> Geri</a>
+        </div>
+        <div class="card-body">
+            <form id="personelForm">
+                <div class="mb-3">
+                    <label for="pf-ad" class="form-label"><i class="fa-solid fa-id-card me-1 text-primary"></i> Ad Soyad</label>
+                    <input type="text" class="form-control" id="pf-ad" value="${e(f.ad_soyad)}" required maxlength="100">
+                </div>
+                <div class="mb-3">
+                    <label for="pf-user" class="form-label"><i class="fa-solid fa-at me-1 text-primary"></i> Kullanıcı Adı</label>
+                    <input type="text" class="form-control" id="pf-user" value="${e(f.kullanici_adi)}" required maxlength="50" autocomplete="off">
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <label for="pf-sifre" class="form-label"><i class="fa-solid fa-lock me-1 text-primary"></i> Şifre ${editId ? '<small class="text-muted">(boş = değişmez)</small>' : ''}</label>
+                        <input type="password" class="form-control" id="pf-sifre" autocomplete="new-password" minlength="6" ${editId ? '' : 'required'}>
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="pf-sifre2" class="form-label"><i class="fa-solid fa-lock me-1 text-primary"></i> Şifre Tekrar</label>
+                        <input type="password" class="form-control" id="pf-sifre2" autocomplete="new-password" ${editId ? '' : 'required'}>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <label for="pf-tel" class="form-label"><i class="fa-solid fa-phone me-1 text-primary"></i> Telefon</label>
+                        <input type="text" class="form-control" id="pf-tel" value="${e(f.telefon)}" placeholder="05xx-xxx-xxxx">
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="pf-mail" class="form-label"><i class="fa-solid fa-envelope me-1 text-primary"></i> E-Posta</label>
+                        <input type="email" class="form-control" id="pf-mail" value="${e(f.eposta)}" placeholder="ornek@mail.com">
+                    </div>
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <label for="pf-rol" class="form-label"><i class="fa-solid fa-shield-halved me-1 text-primary"></i> Rol</label>
+                        <select class="form-select" id="pf-rol" required>
+                            <option value="employee" ${f.rol==='employee'?'selected':''}>Personel</option>
+                            <option value="admin" ${f.rol==='admin'?'selected':''}>Yönetici (Admin)</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="pf-gorev" class="form-label"><i class="fa-solid fa-map-marker-alt me-1 text-primary"></i> Görev Yeri (Birim)</label>
+                        <select class="form-select" id="pf-gorev">
+                            <option value="">— Seçiniz veya Genel —</option>
+                            ${birimler.map(b => `<option value="${e(b.ad)}" ${f.gorev_yeri === b.ad ? 'selected' : ''}>${e(b.ad)}</option>`).join('')}
+                        </select>
+                        <small class="text-muted" style="font-size:0.75rem"><em>Yeni görev yeri menüdeki "Birimler" kısmından eklenmelidir.</em></small>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 justify-content-end">
+                    <a class="btn btn-outline-secondary" style="cursor:pointer;" onclick="navigateTo('personel')">İptal</a>
+                    <button type="submit" class="btn btn-primary-custom"><i class="fa-solid fa-floppy-disk me-1"></i>${editId ? 'Güncelle' : 'Kaydet'}</button>
+                </div>
+            </form>
+        </div>
+    </div></div></div>`;
+
+    container.innerHTML = html;
+
+    document.getElementById('personelForm').addEventListener('submit', async function(ev) {
+        ev.preventDefault();
+        const sifre = document.getElementById('pf-sifre').value;
+        const sifre2 = document.getElementById('pf-sifre2').value;
+
+        if (sifre || !editId) {
+            if (sifre.length < 6) { flashMesaj('danger', 'Şifre en az 6 karakter olmalıdır.'); return; }
+            if (sifre !== sifre2) { flashMesaj('danger', 'Şifreler eşleşmiyor.'); return; }
+        }
+
+        showLoading();
+        const res = await apiCall('savePersonel', {
+            id: editId,
+            ad_soyad: document.getElementById('pf-ad').value.trim(),
+            kullanici_adi: document.getElementById('pf-user').value.trim(),
+            sifre: sifre,
+            rol: document.getElementById('pf-rol').value,
+            gorev_yeri: document.getElementById('pf-gorev').value,
+            telefon: document.getElementById('pf-tel').value.trim(),
+            eposta: document.getElementById('pf-mail').value.trim()
+        });
+        hideLoading();
+
+        if (res.ok) {
+            flashMesaj('success', res.message);
+            navigateTo('personel');
+        } else {
+            flashMesaj('danger', res.error || 'Kaydetme hatası.');
+        }
+    });
+}
+
+// ============================================================
+// BİRİMLER
+// ============================================================
+async function renderBirimler() {
+    const container = document.getElementById('page-birimler');
+    container.innerHTML = '<div class="text-center py-5 text-muted"><div class="loading-spinner mx-auto mb-3" style="border-color:rgba(0,0,0,.1);border-top-color:var(--brand-secondary);width:32px;height:32px;"></div>Yükleniyor...</div>';
+
+    const res = await apiCall('getBirimler');
+    const birimler = res.ok ? res.birimler : [];
+
+    let html = `<div class="row">
+    <div class="col-lg-8 mb-4"><div class="card-modern">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="fa-solid fa-building text-primary me-2"></i>Sistemdeki Birimler</span>
+            <span class="badge bg-secondary">${birimler.length} Birim</span>
+        </div>
+        <div class="card-body p-0"><div class="table-responsive">
+            <table class="table-modern w-100"><thead><tr><th>Birim Adı</th><th class="text-center">Personel Sayısı</th><th>İşlemler</th></tr></thead><tbody>`;
+
+    if (birimler.length === 0) {
+        html += '<tr><td colspan="3" class="text-center text-muted py-4">Sistemde henüz birim yok.</td></tr>';
+    } else {
+        birimler.forEach(b => {
+            html += `<tr>
+                <td class="fw-500">${e(b.ad)}</td>
+                <td class="text-center"><span class="badge ${b.personel_sayisi > 0 ? 'bg-info text-dark' : 'bg-light text-muted'}">${b.personel_sayisi} Personel</span></td>
+                <td><button class="btn-action btn-edit" onclick="birimDuzenleUI(${b.id},'${e(b.ad).replace(/'/g,"\\'")}')" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+                    <a class="btn-action btn-del" onclick="silBirim(${b.id})" title="Sil"><i class="fa-solid fa-trash"></i></a></td>
+            </tr>`;
+        });
+    }
+
+    html += `</tbody></table></div></div></div></div>
+    <div class="col-lg-4">
+        <div class="card-modern"><div class="card-header" id="birimFormBaslik"><i class="fa-solid fa-plus-circle text-success me-2"></i>Yeni Birim Ekle</div>
+        <div class="card-body">
+            <form id="birimForm">
+                <input type="hidden" id="birim-islem" value="ekle">
+                <input type="hidden" id="birim-id" value="">
+                <input type="hidden" id="birim-eski-ad" value="">
+                <div class="mb-3"><label for="birim-ad" class="form-label">Birim Adı</label>
+                    <input type="text" class="form-control" id="birim-ad" required placeholder="Örn: Çakabey K.M."></div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary-custom flex-grow-1" id="birimBtnKaydet">Ekle</button>
+                    <button type="button" class="btn btn-outline-secondary d-none" id="birimBtnIptal" onclick="birimFormSifirla()">İptal</button>
+                </div>
+            </form>
+        </div></div>
+        <div class="alert alert-info mt-3" style="font-size:0.85rem">
+            <i class="fa-solid fa-info-circle me-1"></i>
+            Bir birimin adını düzenlerseniz, o an o birimde çalışan tüm <strong>personellerin görev yerleri otomatik güncellenir.</strong>
+        </div>
+    </div></div>`;
+
+    container.innerHTML = html;
+
+    document.getElementById('birimForm').addEventListener('submit', async function(ev) {
+        ev.preventDefault();
+        const islem = document.getElementById('birim-islem').value;
+        const ad = document.getElementById('birim-ad').value.trim();
+        if (!ad) { flashMesaj('danger', 'Birim adı boş olamaz.'); return; }
+
+        showLoading();
+        const res = await apiCall('saveBirim', {
+            id: islem === 'duzenle' ? document.getElementById('birim-id').value : 0,
+            ad: ad,
+            eski_ad: document.getElementById('birim-eski-ad').value
+        });
+        hideLoading();
+
+        if (res.ok) {
+            flashMesaj('success', res.message);
+            renderBirimler();
+        } else {
+            flashMesaj('danger', res.error || 'Hata oluştu.');
+        }
+    });
+}
+
+function birimDuzenleUI(id, ad) {
+    document.getElementById('birimFormBaslik').innerHTML = '<i class="fa-solid fa-pen text-warning me-2"></i>Birimi Düzenle';
+    document.getElementById('birim-islem').value = 'duzenle';
+    document.getElementById('birim-id').value = id;
+    document.getElementById('birim-ad').value = ad;
+    document.getElementById('birim-eski-ad').value = ad;
+    document.getElementById('birimBtnKaydet').textContent = 'Güncelle';
+    document.getElementById('birimBtnIptal').classList.remove('d-none');
+    document.getElementById('birim-ad').focus();
+}
+
+function birimFormSifirla() {
+    document.getElementById('birimFormBaslik').innerHTML = '<i class="fa-solid fa-plus-circle text-success me-2"></i>Yeni Birim Ekle';
+    document.getElementById('birim-islem').value = 'ekle';
+    document.getElementById('birim-id').value = '';
+    document.getElementById('birim-ad').value = '';
+    document.getElementById('birim-eski-ad').value = '';
+    document.getElementById('birimBtnKaydet').textContent = 'Ekle';
+    document.getElementById('birimBtnIptal').classList.add('d-none');
+}
+
+async function silBirim(id) {
+    if (!confirm('Bu birimi silmek istediğinize emin misiniz?')) return;
+    showLoading();
+    const res = await apiCall('deleteBirim', { id });
+    hideLoading();
+    if (res.ok) { flashMesaj('success', 'Birim silindi.'); renderBirimler(); }
+    else flashMesaj('danger', res.error || 'Silme hatası.');
+}
+
+// ============================================================
+// AYARLAR
+// ============================================================
+async function renderAyarlar() {
+    const container = document.getElementById('page-ayarlar');
+    container.innerHTML = '<div class="text-center py-5 text-muted"><div class="loading-spinner mx-auto mb-3" style="border-color:rgba(0,0,0,.1);border-top-color:var(--brand-secondary);width:32px;height:32px;"></div>Yükleniyor...</div>';
+
+    const res = await apiCall('getAyarlar');
+    const ayarlar = res.ok ? res.ayarlar : {};
+
+    const deger = (key, def = '') => ayarlar[key] || def;
+
+    let html = `<div class="row g-4">
+    <div class="col-lg-3">
+        <div class="card-modern mb-3"><div class="card-header"><i class="fa-solid fa-sliders me-2 text-primary"></i> Ayarlar</div>
+        <div class="list-group list-group-flush">
+            <a href="#" class="list-group-item list-group-item-action active" onclick="showAyarTab('genel',this)"><i class="fa-solid fa-building me-2"></i> Genel Ayarlar</a>
+            <a href="#" class="list-group-item list-group-item-action" onclick="showAyarTab('mesai-tab',this)"><i class="fa-solid fa-clock me-2"></i> Mesai Ayarları</a>
+            <a href="#" class="list-group-item list-group-item-action" onclick="showAyarTab('rapor-tab',this)"><i class="fa-solid fa-file-alt me-2"></i> Rapor Ayarları</a>
+            <a href="#" class="list-group-item list-group-item-action" onclick="showAyarTab('sistem',this)"><i class="fa-solid fa-server me-2"></i> Sistem Bilgisi</a>
+        </div></div>
+        <div class="card-modern" style="border-left:4px solid var(--brand-warning);"><div class="card-body py-3">
+            <div class="d-flex align-items-center gap-2 mb-2"><i class="fa-solid fa-triangle-exclamation text-warning"></i><strong class="small">Önemli Bilgi</strong></div>
+            <p class="small text-muted mb-0">Ayarlar değişiklikleri sistem çalışma mantığını etkilemez. Sadece görüntüleme ve raporlama ayarlarını değiştirir.</p>
+        </div></div>
+    </div>
+
+    <div class="col-lg-9">
+        <form id="ayarlarForm">
+            <div id="ayar-tab-genel" class="ayar-tab">
+                <div class="card-modern"><div class="card-header"><i class="fa-solid fa-building me-2 text-primary"></i> Genel Ayarlar</div>
+                <div class="card-body"><div class="row g-3">
+                    <div class="col-md-6"><label for="ay-sirket" class="form-label">Şirket / Kurum Adı</label>
+                        <input type="text" class="form-control" id="ay-sirket" name="sirket_adi" value="${e(deger('sirket_adi','Şirket Adı'))}" placeholder="Örn: ABC Organizasyon Ltd.">
+                        <small class="text-muted">Raporlarda ve başlıklarda görünecek.</small></div>
+                    <div class="col-md-6"><label for="ay-baslik" class="form-label">Sistem Başlığı</label>
+                        <input type="text" class="form-control" id="ay-baslik" name="sistem_basligi" value="${e(deger('sistem_basligi','Mesai Takip Sistemi'))}" placeholder="Tarayıcı sekmesinde görünecek başlık"></div>
+                    <div class="col-12"><label for="ay-alt" class="form-label">Sistem Alt Bilgi</label>
+                        <input type="text" class="form-control" id="ay-alt" name="sistem_alt_bilgi" value="${e(deger('sistem_alt_bilgi','© 2024 Tüm hakları saklıdır.'))}" placeholder="Raporların altında görünecek bilgi"></div>
+                </div></div></div>
+            </div>
+
+            <div id="ayar-tab-mesai-tab" class="ayar-tab" style="display:none;">
+                <div class="card-modern"><div class="card-header"><i class="fa-solid fa-clock me-2 text-primary"></i> Mesai Hesaplama Ayarları</div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-3"><i class="fa-solid fa-info-circle me-2"></i><strong>Gece Mesaisi:</strong> Bu saatler arasındaki mesailer gece mesaisi olarak hesaplanır.</div>
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label">Gece Mesaisi Başlangıç Saati</label>
+                            <input type="time" class="form-control" name="gece_baslangic" value="${e(deger('gece_baslangic','20:00'))}"><small class="text-muted">Varsayılan: 20:00</small></div>
+                        <div class="col-md-6"><label class="form-label">Gece Mesaisi Bitiş Saati</label>
+                            <input type="time" class="form-control" name="gece_bitis" value="${e(deger('gece_bitis','06:00'))}"><small class="text-muted">Varsayılan: 06:00</small></div>
+                        <div class="col-md-6"><label class="form-label">Yıllık İzin Süresi (Gün)</label>
+                            <input type="number" class="form-control" name="izin_suresi_gun" value="${e(deger('izin_suresi_gun','14'))}" min="0" max="365"><small class="text-muted">Personel başına yıllık izin hakkı</small></div>
+                        <div class="col-md-6"><label class="form-label">Maksimum Günlük Mesai Saati</label>
+                            <input type="number" class="form-control" name="maksimum_saat_gunluk" value="${e(deger('maksimum_saat_gunluk','12'))}" min="1" max="24" step="0.5"><small class="text-muted">Bu saatten fazlası uyarı verecek</small></div>
+                    </div>
+                </div></div>
+            </div>
+
+            <div id="ayar-tab-rapor-tab" class="ayar-tab" style="display:none;">
+                <div class="card-modern"><div class="card-header"><i class="fa-solid fa-file-alt me-2 text-primary"></i> Rapor Ayarları</div>
+                <div class="card-body"><div class="row g-3">
+                    <div class="col-12"><label class="form-label">Varsayılan Rapor Başlığı</label>
+                        <input type="text" class="form-control" name="rapor_basligi" value="${e(deger('rapor_basligi','Aylık Mesai Raporu'))}" placeholder="Raporların varsayılan başlığı"></div>
+                    <div class="col-12"><label class="form-label">Rapor Açıklaması</label>
+                        <textarea class="form-control" name="rapor_aciklama" rows="3" placeholder="Raporların altında görünecek açıklama">${e(deger('rapor_aciklama',''))}</textarea></div>
+                </div></div></div>
+            </div>
+
+            <div id="ayar-tab-sistem" class="ayar-tab" style="display:none;">
+                <div class="card-modern"><div class="card-header"><i class="fa-solid fa-server me-2 text-primary"></i> Sistem Bilgisi</div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr><td class="text-muted" style="width:200px">Sistem Versiyonu</td><td><strong>3.0.0 (Web)</strong></td></tr>
+                        <tr><td class="text-muted">Platform</td><td>HTML + Google Sheets</td></tr>
+                        <tr><td class="text-muted">Veritabanı</td><td>Google Sheets</td></tr>
+                        <tr><td class="text-muted">Toplam Personel</td><td>${ayarlar._totalPersonel || 0} kişi</td></tr>
+                        <tr><td class="text-muted">Toplam Mesai Kaydı</td><td>${ayarlar._totalMesai || 0} kayıt</td></tr>
+                    </table>
+                </div></div>
+            </div>
+
+            <div class="mt-3 d-flex justify-content-end gap-2">
+                <a class="btn btn-outline-secondary" style="cursor:pointer;" onclick="navigateTo('dashboard')">İptal</a>
+                <button type="submit" class="btn btn-primary-custom"><i class="fa-solid fa-floppy-disk me-1"></i> Ayarları Kaydet</button>
+            </div>
+        </form>
+    </div></div>`;
+
+    container.innerHTML = html;
+
+    document.getElementById('ayarlarForm').addEventListener('submit', async function(ev) {
+        ev.preventDefault();
+        const data = {};
+        new FormData(ev.target).forEach((val, key) => data[key] = val);
+
+        showLoading();
+        const res = await apiCall('saveAyarlar', data);
+        hideLoading();
+        if (res.ok) flashMesaj('success', res.message);
+        else flashMesaj('danger', res.error || 'Hata oluştu.');
+    });
+}
+
+function showAyarTab(tabId, el) {
+    document.querySelectorAll('.ayar-tab').forEach(t => t.style.display = 'none');
+    const target = document.getElementById('ayar-tab-' + tabId);
+    if (target) target.style.display = 'block';
+    document.querySelectorAll('.list-group-item').forEach(a => a.classList.remove('active'));
+    if (el) el.classList.add('active');
+}
+
+// ============================================================
+// PROFİL
+// ============================================================
+function renderProfil() {
+    const container = document.getElementById('page-profil');
+    
+    let html = `<div class="row justify-content-center"><div class="col-xl-6 col-lg-8">
+    <div class="card-modern">
+        <div class="card-header"><i class="fa-solid fa-user-gear me-2 text-primary"></i>Profil Ayarlarım</div>
+        <div class="card-body">
+            <div class="text-center mb-4">
+                <div class="avatar mx-auto mb-2" style="width:70px;height:70px;font-size:1.5rem;">${(currentUser.ad_soyad || '?')[0].toUpperCase()}</div>
+                <h5 class="mb-0">${e(currentUser.ad_soyad)}</h5>
+                <p class="text-muted small">${e(currentUser.kullanici_adi)} | ${currentUser.rol==='admin'?'Yönetici':'Personel'}</p>
+            </div>
+            
+            <form id="profileForm">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><i class="fa-solid fa-phone me-1"></i> Telefon</label>
+                        <input type="text" class="form-control" id="pr-tel" value="${e(currentUser.telefon || '')}" placeholder="05xx-xxx-xxxx">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><i class="fa-solid fa-envelope me-1"></i> E-Posta</label>
+                        <input type="email" class="form-control" id="pr-mail" value="${e(currentUser.eposta || '')}" placeholder="ornek@mail.com">
+                    </div>
+                </div>
+                
+                <hr class="my-4">
+                <h6 class="mb-3 text-primary"><i class="fa-solid fa-key me-1"></i>Şifre Değiştir</h6>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Yeni Şifre <small class="text-muted">(boş = değişmez)</small></label>
+                        <input type="password" class="form-control" id="pr-sifre" minlength="6">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Yeni Şifre Tekrar</label>
+                        <input type="password" class="form-control" id="pr-sifre2">
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary-custom"><i class="fa-solid fa-floppy-disk me-1"></i>Değişiklikleri Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div></div></div>`;
+    
+    container.innerHTML = html;
+    
+    document.getElementById('profileForm').addEventListener('submit', async function(ev) {
+        ev.preventDefault();
+        const sifre = document.getElementById('pr-sifre').value;
+        const sifre2 = document.getElementById('pr-sifre2').value;
+        
+        if (sifre) {
+            if (sifre.length < 6) { flashMesaj('danger', 'Şifre en az 6 karakter olmalıdır.'); return; }
+            if (sifre !== sifre2) { flashMesaj('danger', 'Şifreler eşleşmiyor.'); return; }
+        }
+        
+        showLoading();
+        const res = await apiCall('updateProfile', {
+            telefon: document.getElementById('pr-tel').value.trim(),
+            eposta: document.getElementById('pr-mail').value.trim(),
+            yeni_sifre: sifre
+        });
+        hideLoading();
+        
+        if (res.ok) {
+            flashMesaj('success', res.message);
+            saveSession(res.user);
+            document.getElementById('sidebar-name').textContent = res.user.ad_soyad;
+            renderProfil();
+        } else {
+            flashMesaj('danger', res.error || 'Güncelleme hatası.');
+        }
+    });
+}
+
+// ============================================================
+// UYGULAMA BAŞLATMA
+// ============================================================
+(function init() {
+    if (loadSession()) {
+        showApp();
+    } else {
+        showLogin();
+    }
+})();
+</script>
+</body>
+</html>
